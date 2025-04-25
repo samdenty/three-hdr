@@ -1,3 +1,4 @@
+import './webgl/virtual-webgl.js';
 import {
 	REVISION,
 	BackSide,
@@ -17,7 +18,10 @@ import {
 	UnsignedInt248Type,
 	UnsignedShort4444Type,
 	UnsignedShort5551Type,
-	WebGLCoordinateSystem
+	WebGLCoordinateSystem,
+	NearestFilter,
+	FloatType,
+	RGBAFormat
 } from '../constants.js';
 import { Color } from '../math/Color.js';
 import { Frustum } from '../math/Frustum.js';
@@ -52,8 +56,13 @@ import { WebGLUtils } from './webgl/WebGLUtils.js';
 import { WebXRManager } from './webxr/WebXRManager.js';
 import { WebGLMaterials } from './webgl/WebGLMaterials.js';
 import { WebGLUniformsGroups } from './webgl/WebGLUniformsGroups.js';
-import { createCanvasElement, probeAsync, toNormalizedProjectionMatrix, toReversedProjectionMatrix, warnOnce } from '../utils.js';
+import { createCanvasElement, createDomElement, probeAsync, toNormalizedProjectionMatrix, toReversedProjectionMatrix, warnOnce } from '../utils.js';
 import { ColorManagement } from '../math/ColorManagement.js';
+import { Scene } from '../scenes/Scene.js';
+import { OrthographicCamera } from '../cameras/OrthographicCamera.js';
+import { Mesh } from '../objects/Mesh.js';
+import { PlaneGeometry } from '../geometries/PlaneGeometry.js';
+import { ShaderMaterial } from '../materials/ShaderMaterial.js';
 
 /**
  * This renderer uses WebGL 2 to display scenes.
@@ -131,9 +140,74 @@ class WebGLRenderer {
 		 * document.body.appendChild( renderer.domElement );
 		 * ```
 		 *
-		 * @type {DOMElement}
+		 * @type {HTMLCanvasElement}
 		 */
-		this.domElement = canvas;
+		this.canvasElement = canvas;
+
+		if (!parameters.luminance) {
+			const { domElement, canvases } = createDomElement(canvas);
+			this.domElement = domElement;
+
+			this.luminanceRenderers = canvases.map(canvas => {
+				const renderer = new WebGLRenderer({ canvas, luminance: true })
+
+				renderer.domElement.style.position = 'absolute';
+				renderer.domElement.style.inset = '0';
+				renderer.setSize(this.canvasElement.width, this.canvasElement.height);
+
+				return renderer;
+			});
+
+			this.luminanceRenderTarget = new WebGLRenderTarget(canvas.width, canvas.height, {
+				format: RGBAFormat,
+				type: FloatType,
+				minFilter: NearestFilter,
+				magFilter: NearestFilter,
+				colorSpace: LinearSRGBColorSpace
+			});
+
+			this.luminanceMaterial = new ShaderMaterial({
+				uniforms: {
+					tDiffuse: { value: null }
+				},
+				vertexShader: `
+						varying vec2 vUv;
+						void main() {
+								vUv = uv;
+								gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+						}
+				`,
+				fragmentShader: `
+					#include <common>
+
+					uniform sampler2D tDiffuse;
+					varying vec2 vUv;
+
+					void main() {
+							vec4 texel = texture2D(tDiffuse, vUv);
+							float luminance = max(texel.r, max(texel.g, texel.b));
+
+							if (luminance > 1.0) {
+								float alpha = 1.0 - (luminance - 1.0);
+
+								gl_FragColor = vec4(alpha, alpha, alpha, 1.0);
+							} else {
+								gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+							}
+					}
+					`
+			});
+
+			this.luminancePostScene = new Scene();
+			this.luminancePostCamera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
+			this.luminancePostQuad = new Mesh(new PlaneGeometry(2, 2), this.luminanceMaterial);
+			this.luminancePostScene.add(this.luminancePostQuad);
+		} else {
+			this.luminanceRenderers = [];
+			this.domElement = canvas;
+		}
+
+
 
 		/**
 		 * A object with debug configuration settings.
@@ -591,6 +665,8 @@ class WebGLRenderer {
 
 			if ( value === undefined ) return;
 
+			this.luminanceRenderers.forEach(renderer => renderer.setPixelRatio(value));
+
 			_pixelRatio = value;
 
 			this.setSize( _width, _height, false );
@@ -632,6 +708,13 @@ class WebGLRenderer {
 
 			canvas.width = Math.floor( width * _pixelRatio );
 			canvas.height = Math.floor( height * _pixelRatio );
+
+			if (this.luminanceRenderers.length) {
+				this.luminanceRenderTarget.setSize(canvas.width, canvas.height);
+				this.luminanceRenderers.forEach(renderer => {
+					renderer.setSize(width, height);
+				});
+			}
 
 			if ( updateStyle === true ) {
 
@@ -678,6 +761,14 @@ class WebGLRenderer {
 
 			canvas.width = Math.floor( width * pixelRatio );
 			canvas.height = Math.floor( height * pixelRatio );
+
+			if (this.luminanceRenderers.length) {
+				this.luminanceRenderTarget.setSize(canvas.width, canvas.height);
+				this.luminanceRenderers.forEach(renderer => {
+					renderer.setPixelRatio(pixelRatio);
+					renderer.setSize(width, height);
+				});
+			}
 
 			this.setViewport( 0, 0, width, height );
 
@@ -1706,6 +1797,28 @@ class WebGLRenderer {
 			}
 
 		};
+
+		const render = this.render.bind(this);
+		this.render = function (scene, camera) {
+			render(scene, camera);
+
+			if (this.luminanceRenderers.length) {
+				const renderTarget = this.getRenderTarget();
+
+				this.setRenderTarget(this.luminanceRenderTarget);
+				render(scene, camera);
+				this.setRenderTarget(renderTarget);
+
+				const { texture } = this.luminanceRenderTarget;
+
+				this.luminanceMaterial.uniforms.tDiffuse.value = texture;
+
+				for (const renderer of this.luminanceRenderers) {
+					Object.assign(renderer.properties.get(texture), properties.get(texture));
+					renderer.render(this.luminancePostScene, this.luminancePostCamera);
+				}
+			}
+		}
 
 		function projectObject( object, camera, groupOrder, sortObjects ) {
 

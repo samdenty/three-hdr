@@ -18,8 +18,6 @@ import NodeLibrary from './nodes/NodeLibrary.js';
 import Lighting from './Lighting.js';
 import XRManager from './XRManager.js';
 
-import NodeMaterial from '../../materials/nodes/NodeMaterial.js';
-
 import { Scene } from '../../scenes/Scene.js';
 import { Frustum } from '../../math/Frustum.js';
 import { FrustumArray } from '../../math/FrustumArray.js';
@@ -27,9 +25,13 @@ import { Matrix4 } from '../../math/Matrix4.js';
 import { Vector2 } from '../../math/Vector2.js';
 import { Vector4 } from '../../math/Vector4.js';
 import { RenderTarget } from '../../core/RenderTarget.js';
-import { DoubleSide, BackSide, FrontSide, SRGBColorSpace, NoToneMapping, LinearFilter, LinearSRGBColorSpace, HalfFloatType, RGBAFormat, PCFShadowMap } from '../../constants.js';
-
+import { DoubleSide, BackSide, FrontSide, SRGBColorSpace, NoToneMapping, LinearFilter, LinearSRGBColorSpace, HalfFloatType, RGBAFormat, FloatType, PCFShadowMap, NearestFilter } from '../../constants.js';
 import { highpModelNormalViewMatrix, highpModelViewMatrix } from '../../nodes/accessors/ModelNode.js';
+import { ShaderMaterial } from '../../materials/ShaderMaterial.js';
+import NodeMaterial from '../../materials/nodes/NodeMaterial.js';
+import { PlaneGeometry } from '../../geometries/PlaneGeometry.js';
+import { Mesh } from '../../objects/Mesh.js';
+import { OrthographicCamera } from '../../cameras/OrthographicCamera.js';
 
 const _scene = /*@__PURE__*/ new Scene();
 const _drawingBufferSize = /*@__PURE__*/ new Vector2();
@@ -101,7 +103,63 @@ class Renderer {
 		 *
 		 * @type {HTMLCanvasElement|OffscreenCanvas}
 		 */
-		this.domElement = backend.getDomElement();
+		this.domElement = backend.getDomElement(!parameters.luminance);
+		this.canvasElement = backend.canvasElement;
+
+		this.luminanceRenderers = backend.luminanceCanvases.map(canvas => {
+			const renderer = new this.constructor({ canvas, luminance: true })
+
+			renderer.domElement.style.position = 'absolute';
+			renderer.domElement.style.inset = '0';
+			renderer.setSize(this.canvasElement.width, this.canvasElement.height);
+
+			return renderer;
+		});
+
+		this.luminanceRenderTarget = new RenderTarget(this.canvasElement.width, this.canvasElement.height, {
+			format: RGBAFormat,
+			type: FloatType,
+			minFilter: NearestFilter,
+			magFilter: NearestFilter,
+			colorSpace: LinearSRGBColorSpace
+		});
+
+		this.luminanceMaterial = new ShaderMaterial({
+			uniforms: {
+				tDiffuse: { value: null }
+			},
+			vertexShader: `
+					varying vec2 vUv;
+					void main() {
+							vUv = uv;
+							gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+					}
+			`,
+			fragmentShader: `
+				#include <common>
+
+				uniform sampler2D tDiffuse;
+				varying vec2 vUv;
+
+				void main() {
+						vec4 texel = texture2D(tDiffuse, vUv);
+						float luminance = max(texel.r, max(texel.g, texel.b));
+
+						if (luminance > 1.0) {
+							float alpha = 1.0 - (luminance - 1.0);
+
+							gl_FragColor = vec4(alpha, alpha, alpha, 1.0);
+						} else {
+							gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+						}
+				}
+				`
+		});
+
+		this.luminancePostScene = new Scene();
+		this.luminancePostCamera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
+		this.luminancePostQuad = new Mesh(new PlaneGeometry(2, 2), this.luminanceMaterial);
+		this.luminancePostScene.add(this.luminancePostQuad);
 
 		/**
 		 * A reference to the current backend.
@@ -288,7 +346,7 @@ class Renderer {
 		 * @private
 		 * @type {number}
 		 */
-		this._width = this.domElement.width;
+		this._width = this.canvasElement.width;
 
 		/**
 		 * The height of the renderer's default framebuffer in logical pixel unit.
@@ -296,7 +354,7 @@ class Renderer {
 		 * @private
 		 * @type {number}
 		 */
-		this._height = this.domElement.height;
+		this._height = this.canvasElement.height;
 
 		/**
 		 * The viewport of the renderer in logical pixel unit.
@@ -1185,16 +1243,35 @@ class Renderer {
 	 */
 	render( scene, camera ) {
 
+		const renderLuminance =() => {
+			if (this.luminanceRenderers) {
+				const renderTarget = this.getRenderTarget();
+
+				this.setRenderTarget(this.luminanceRenderTarget);
+				this._renderScene(scene, camera);
+				this.setRenderTarget(renderTarget);
+
+				const { texture } = this.luminanceRenderTarget;
+
+				this.luminanceMaterial.uniforms.tDiffuse.value = texture;
+
+				for (const renderer of this.luminanceRenderers) {
+					renderer.render(this.luminancePostScene, this.luminancePostCamera);
+				}
+			}
+		}
+
 		if ( this._initialized === false ) {
 
 			console.warn( 'THREE.Renderer: .render() called before the backend is initialized. Try using .renderAsync() instead.' );
 
-			return this.renderAsync( scene, camera );
+			return this.renderAsync( scene, camera ).then(renderLuminance);
 
 		}
 
 		this._renderScene( scene, camera );
 
+		renderLuminance();
 	}
 
 	/**
@@ -1302,8 +1379,6 @@ class Renderer {
 			renderTarget = outputRenderTarget;
 
 		}
-
-		//
 
 		const renderContext = this._renderContexts.get( scene, camera, renderTarget );
 
@@ -1438,8 +1513,8 @@ class Renderer {
 
 			renderContext.textures = null;
 			renderContext.depthTexture = null;
-			renderContext.width = this.domElement.width;
-			renderContext.height = this.domElement.height;
+			renderContext.width = this.canvasElement.width;
+			renderContext.height = this.canvasElement.height;
 			renderContext.depth = this.depth;
 			renderContext.stencil = this.stencil;
 
@@ -1657,6 +1732,8 @@ class Renderer {
 
 		if ( this._pixelRatio === value ) return;
 
+		this.luminanceRenderers.forEach(renderer => renderer.setPixelRatio(value));
+
 		this._pixelRatio = value;
 
 		this.setSize( this._width, this._height, false );
@@ -1686,8 +1763,21 @@ class Renderer {
 
 		this._pixelRatio = pixelRatio;
 
-		this.domElement.width = Math.floor( width * pixelRatio );
-		this.domElement.height = Math.floor( height * pixelRatio );
+		this.canvasElement.width = Math.floor( width * pixelRatio );
+		this.canvasElement.height = Math.floor( height * pixelRatio );
+
+		if (this.luminanceRenderers) {
+			for (const renderer of this.luminanceRenderers) {
+				renderer.canvasElement.width = this.canvasElement.width;
+				renderer.canvasElement.height = this.canvasElement.height;
+			}
+
+			this.luminanceRenderTarget.setSize(this.canvasElement.width, this.canvasElement.height);
+			this.luminanceRenderers.forEach(renderer => {
+				renderer.setPixelRatio(pixelRatio);
+				renderer.setSize(width, height)
+			});
+		}
 
 		this.setViewport( 0, 0, width, height );
 
@@ -1710,13 +1800,18 @@ class Renderer {
 		this._width = width;
 		this._height = height;
 
-		this.domElement.width = Math.floor( width * this._pixelRatio );
-		this.domElement.height = Math.floor( height * this._pixelRatio );
+		this.canvasElement.width = Math.floor( width * this._pixelRatio );
+		this.canvasElement.height = Math.floor( height * this._pixelRatio );
+
+		if (this.luminanceRenderers) {
+			this.luminanceRenderTarget.setSize(this.canvasElement.width, this.canvasElement.height);
+			this.luminanceRenderers.forEach(renderer => renderer.setSize(width, height));
+		}
 
 		if ( updateStyle === true ) {
 
-			this.domElement.style.width = width + 'px';
-			this.domElement.style.height = height + 'px';
+			this.canvasElement.style.width = width + 'px';
+			this.canvasElement.style.height = height + 'px';
 
 		}
 

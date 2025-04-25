@@ -50,7 +50,7 @@ function main() {
 
 	function resizeRendererToDisplaySize( renderer ) {
 
-		const canvas = renderer.domElement;
+		const canvas = renderer.canvasElement;
 		const width = canvas.clientWidth;
 		const height = canvas.clientHeight;
 		const needResize = canvas.width !== width || canvas.height !== height;
@@ -70,7 +70,7 @@ function main() {
 
 		if ( resizeRendererToDisplaySize( renderer ) ) {
 
-			const canvas = renderer.domElement;
+			const canvas = renderer.canvasElement;
 			camera.aspect = canvas.clientWidth / canvas.clientHeight;
 			camera.updateProjectionMatrix();
 

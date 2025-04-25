@@ -148,10 +148,10 @@ function SidebarProjectImage( editor ) {
 		output.document.body.style.margin = '0px';
 		output.document.body.style.overflow = 'hidden';
 
-		const canvas = renderer.domElement;
-		canvas.style.width = width + 'px';
-		canvas.style.height = height + 'px';
-		output.document.body.appendChild( canvas );
+		const element = renderer.domElement;
+		element.style.width = width + 'px';
+		element.style.height = height + 'px';
+		output.document.body.appendChild( element );
 
 		//
 

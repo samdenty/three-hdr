@@ -225,7 +225,7 @@ class WebGLBackend extends Backend {
 			stencil: renderer.stencil
 		};
 
-		const glContext = ( parameters.context !== undefined ) ? parameters.context : renderer.domElement.getContext( 'webgl2', contextAttributes );
+		const glContext = ( parameters.context !== undefined ) ? parameters.context : renderer.canvasElement.getContext( 'webgl2', contextAttributes );
 
 	 	function onContextLost( event ) {
 
@@ -244,7 +244,7 @@ class WebGLBackend extends Backend {
 
 		this._onContextLost = onContextLost;
 
-		renderer.domElement.addEventListener( 'webglcontextlost', onContextLost, false );
+		renderer.canvasElement.addEventListener( 'webglcontextlost', onContextLost, false );
 
 		this.gl = glContext;
 
@@ -2520,7 +2520,7 @@ class WebGLBackend extends Backend {
 		const extension = this.extensions.get( 'WEBGL_lose_context' );
 		if ( extension ) extension.loseContext();
 
-		this.renderer.domElement.removeEventListener( 'webglcontextlost', this._onContextLost );
+		this.renderer.canvasElement.removeEventListener( 'webglcontextlost', this._onContextLost );
 
 	}
 

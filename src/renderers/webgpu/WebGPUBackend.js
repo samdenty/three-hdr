@@ -231,7 +231,7 @@ class WebGPUBackend extends Backend {
 
 		} );
 
-		const context = ( parameters.context !== undefined ) ? parameters.context : renderer.domElement.getContext( 'webgpu' );
+		const context = ( parameters.context !== undefined ) ? parameters.context : renderer.canvasElement.getContext( 'webgpu' );
 
 		this.device = device;
 		this.context = context;

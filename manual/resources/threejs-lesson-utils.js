@@ -28,7 +28,7 @@ export const threejsLessonUtils = {
 
 		const resizeRendererToDisplaySize = ( renderer ) => {
 
-			const canvas = renderer.domElement;
+			const canvas = renderer.canvasElement;
 			const width = canvas.clientWidth * this.pixelRatio | 0;
 			const height = canvas.clientHeight * this.pixelRatio | 0;
 			const needResize = canvas.width !== width || canvas.height !== height;
@@ -286,8 +286,8 @@ export const threejsLessonUtils = {
 			root.rotation.y = time * .11;
 
 			const rect = elem.getBoundingClientRect();
-			if ( rect.bottom < 0 || rect.top > renderer.domElement.clientHeight ||
-          rect.right < 0 || rect.left > renderer.domElement.clientWidth ) {
+			if ( rect.bottom < 0 || rect.top > renderer.canvasElement.clientHeight ||
+          rect.right < 0 || rect.left > renderer.canvasElement.clientWidth ) {
 
 				return false;
 
@@ -296,7 +296,7 @@ export const threejsLessonUtils = {
 			renderInfo.width = rect.width * this.pixelRatio;
 			renderInfo.height = rect.height * this.pixelRatio;
 			renderInfo.left = rect.left * this.pixelRatio;
-			renderInfo.bottom = ( renderer.domElement.clientHeight - rect.bottom ) * this.pixelRatio;
+			renderInfo.bottom = ( renderer.canvasElement.clientHeight - rect.bottom ) * this.pixelRatio;
 
 			if ( renderInfo.width !== oldWidth || renderInfo.height !== oldHeight ) {
 

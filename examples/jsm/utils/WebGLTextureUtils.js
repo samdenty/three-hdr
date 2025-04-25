@@ -91,7 +91,7 @@ export function decompress( texture, maxTextureSize = Infinity, renderer = null 
 	canvas.width = width;
 	canvas.height = height;
 
-	context.drawImage( renderer.domElement, 0, 0, width, height );
+	context.drawImage( renderer.canvasElement, 0, 0, width, height );
 
 	const readableTexture = new CanvasTexture( canvas );
 

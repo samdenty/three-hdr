@@ -848,7 +848,7 @@ function renderToCanvas( texture ) {
 	fsQuad.material.map = texture;
 	fsQuad.render( renderer );
 
-	return renderer.domElement;
+	return renderer.canvasElement;
 
 }
 

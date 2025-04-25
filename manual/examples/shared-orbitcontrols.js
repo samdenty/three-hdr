@@ -99,7 +99,7 @@ export function init( data ) { /* eslint-disable-line no-unused-vars */
 
 	function resizeRendererToDisplaySize( renderer ) {
 
-		const canvas = renderer.domElement;
+		const canvas = renderer.canvasElement;
 		const width = inputElement.clientWidth;
 		const height = inputElement.clientHeight;
 		const needResize = canvas.width !== width || canvas.height !== height;

@@ -14,7 +14,7 @@ var APP = {
 		dom.appendChild( renderer.domElement );
 
 		this.dom = dom;
-		this.canvas = renderer.domElement;
+		this.canvas = renderer.canvasElement;
 
 		this.width = 500;
 		this.height = 500;

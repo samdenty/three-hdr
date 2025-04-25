@@ -117,7 +117,7 @@ import { threejsLessonUtils } from './threejs-lesson-utils.js';
 				const width = ( rect.right - rect.left ) * renderInfo.pixelRatio;
 				const height = ( rect.bottom - rect.top ) * renderInfo.pixelRatio;
 				const left = rect.left * renderInfo.pixelRatio;
-				const bottom = ( renderer.domElement.clientHeight - rect.bottom ) * renderInfo.pixelRatio;
+				const bottom = ( renderer.canvasElement.clientHeight - rect.bottom ) * renderInfo.pixelRatio;
 
 				const cellSize = Math.min( width / numRough, height / numMetal ) | 0;
 				const xOff = ( width - cellSize * numRough ) / 2;

@@ -60,7 +60,7 @@ function main( data ) {
 
 	function resizeRendererToDisplaySize( renderer ) {
 
-		const canvas = renderer.domElement;
+		const canvas = renderer.canvasElement;
 		const width = state.width;
 		const height = state.height;
 		const needResize = canvas.width !== width || canvas.height !== height;

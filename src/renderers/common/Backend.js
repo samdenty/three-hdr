@@ -3,7 +3,7 @@ let _color4 = null;
 
 import Color4 from './Color4.js';
 import { Vector2 } from '../../math/Vector2.js';
-import { createCanvasElement, warnOnce } from '../../utils.js';
+import { createCanvasElement, createDomElement, warnOnce } from '../../utils.js';
 import { REVISION } from '../../constants.js';
 
 /**
@@ -578,19 +578,29 @@ class Backend {
 	 *
 	 * @return {HTMLCanvasElement} The DOM element.
 	 */
-	getDomElement() {
+	getDomElement(luminance = false) {
 
 		let domElement = this.domElement;
 
 		if ( domElement === null ) {
+			const canvas = ( this.parameters.canvas !== undefined ) ? this.parameters.canvas : createCanvasElement();
 
-			domElement = ( this.parameters.canvas !== undefined ) ? this.parameters.canvas : createCanvasElement();
+			let canvases;
+
+			if (luminance) {
+				({ domElement, canvases } = createDomElement(canvas));
+			} else {
+				domElement = canvas;
+				canvases = [];
+			}
 
 			// OffscreenCanvas does not have setAttribute, see #22811
-			if ( 'setAttribute' in domElement ) domElement.setAttribute( 'data-engine', `three.js r${REVISION} webgpu` );
+			if ( 'setAttribute' in canvas ) canvas.setAttribute( 'data-engine', `three.js r${REVISION} webgpu` );
 
 			this.domElement = domElement;
 
+			this.canvasElement = canvas;
+			this.luminanceCanvases = canvases;
 		}
 
 		return domElement;
