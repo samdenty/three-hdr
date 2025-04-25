@@ -1,6 +1,6 @@
 {
-  "name": "three",
-  "version": "0.176.0",
+  "name": "three-hdr",
+  "version": "0.176.1",
   "description": "JavaScript 3D library",
   "type": "module",
   "main": "./build/three.cjs",

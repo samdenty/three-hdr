@@ -71,9 +71,6 @@ function createElementNS( name ) {
 function createDomElement(canvas) {
 	const canvases = [];
 
-	canvas.style.position = 'absolute';
-	canvas.style.inset = '0';
-
 	canvas.style.filter = 'invert(1)';
 	canvas.style.mixBlendMode = 'exclusion';
 
@@ -83,6 +80,8 @@ function createDomElement(canvas) {
 
 	for (let i = 0; i < 2; i++) {
 		const container = createElementNS("div");
+		container.style.pointerEvents = 'none';
+
 		const video = createElementNS("video");
 		container.append(video);
 
