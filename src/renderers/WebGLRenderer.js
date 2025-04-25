@@ -186,14 +186,8 @@ class WebGLRenderer {
 					void main() {
 							vec4 texel = texture2D(tDiffuse, vUv);
 							float luminance = max(texel.r, max(texel.g, texel.b));
-
-							if (luminance > 1.0) {
-								float alpha = 1.0 - (luminance - 1.0);
-
-								gl_FragColor = vec4(alpha, alpha, alpha, 1.0);
-							} else {
-								gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
-							}
+							float alpha = 1.0 - (luminance - 1.0);
+							gl_FragColor = vec4(alpha, alpha, alpha, 1.0);
 					}
 					`
 			});

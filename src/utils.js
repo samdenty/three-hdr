@@ -95,7 +95,7 @@ function createDomElement(canvas) {
 		if (i === 0) {
 			domElement.prepend(container);
 		} else {
-			container.style.mixBlendMode = 'color-burn';
+			container.style.mixBlendMode = 'darken';
 			domElement.append(container);
 		}
 
