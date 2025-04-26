@@ -68,6 +68,20 @@ function createElementNS( name ) {
 
 }
 
+const styles = document.createElement('style');
+
+styles.textContent = `
+.disable-hdr .three\\.js-hdr-highlight {
+	display: none;
+}
+.disable-hdr .three\\.js-hdr canvas[data-engine*="three.js"] {
+	mix-blend-mode: initial !important;
+	filter: initial !important;
+}
+`;
+
+document.head.appendChild(styles);
+
 function createDomElement(canvas) {
 	const canvases = [];
 
@@ -75,11 +89,13 @@ function createDomElement(canvas) {
 	canvas.style.mixBlendMode = 'exclusion';
 
 	const domElement = createElementNS( 'div');
+	domElement.classList.add('three.js-hdr');
 
 	domElement.appendChild(canvas);
 
 	for (let i = 0; i < 2; i++) {
 		const container = createElementNS("div");
+		container.classList.add('three.js-hdr-highlight');
 		container.style.pointerEvents = 'none';
 
 		const video = createElementNS("video");
