@@ -106,6 +106,16 @@ class Renderer {
 		this.domElement = backend.getDomElement(!parameters.luminance);
 		this.canvasElement = backend.canvasElement;
 
+		if (backend.luminanceCanvases.length) {
+			Object.defineProperty(this, 'toneMapping', {
+				get() {
+					return NoToneMapping;
+				},
+				set() {},
+				configurable: true,
+			});
+		}
+
 		this.luminanceRenderers = backend.luminanceCanvases.map(canvas => {
 			const renderer = new this.constructor({ canvas, luminance: true })
 
@@ -142,10 +152,10 @@ class Renderer {
 				varying vec2 vUv;
 
 				void main() {
-						vec4 texel = texture2D(tDiffuse, vUv);
-						float luminance = max(texel.r, max(texel.g, texel.b));
-						float alpha = 1.0 - (luminance - 1.0);
-						gl_FragColor = vec4(alpha, alpha, alpha, 1.0);
+					vec4 texel = texture2D(tDiffuse, vUv);
+					float luminance = max(texel.r, max(texel.g, texel.b));
+					float alpha = 1.0 - (luminance - 1.0);
+					gl_FragColor = vec4(alpha, alpha, alpha, 1.0);
 				}
 				`
 		});

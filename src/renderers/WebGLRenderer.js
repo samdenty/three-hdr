@@ -196,6 +196,14 @@ class WebGLRenderer {
 			this.luminancePostCamera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
 			this.luminancePostQuad = new Mesh(new PlaneGeometry(2, 2), this.luminanceMaterial);
 			this.luminancePostScene.add(this.luminancePostQuad);
+
+			Object.defineProperty(this, 'toneMapping', {
+				get() {
+					return NoToneMapping;
+				},
+				set() {},
+				configurable: true,
+			});
 		} else {
 			this.luminanceRenderers = [];
 			this.domElement = canvas;
