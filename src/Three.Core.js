@@ -4,7 +4,7 @@ setTimeout(() => {
 		const hdrToggle = document.createElement('div');
 		hdrToggle.style.cssText = `
 				position: fixed;
-				top: 10px;
+				top: 60px;
 				left: 10px;
 				cursor: pointer;
 				z-index: 100;
@@ -12,6 +12,7 @@ setTimeout(() => {
 				font-family: Helvetica, Arial, sans-serif;
 				font-size: 12px;
 				background: rgba(0,0,0,0.65);
+				border: 1px solid #fff;
 				padding: 6px 10px;
 				border-radius: 3px;
 				display: flex;
@@ -30,7 +31,7 @@ setTimeout(() => {
 
 		const label = document.createElement('label');
 		label.htmlFor = 'hdr-toggle';
-		label.textContent = 'HDR';
+		label.textContent = 'Toggle HDR';
 		label.style.cssText = `
 				cursor: pointer;
 				user-select: none;
