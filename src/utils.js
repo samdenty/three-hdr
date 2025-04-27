@@ -86,7 +86,6 @@ function createDomElement(canvas) {
 	const canvases = [];
 
 	canvas.style.filter = 'invert(1)';
-	canvas.style.mixBlendMode = 'exclusion';
 
 	const domElement = createElementNS( 'div');
 	domElement.classList.add('three.js-hdr');
@@ -97,23 +96,18 @@ function createDomElement(canvas) {
 		const container = createElementNS("div");
 		container.classList.add('three.js-hdr-highlight');
 		container.style.pointerEvents = 'none';
-
-		const video = createElementNS("video");
-		container.append(video);
+		container.style.mixBlendMode = i === 0 ? 'exclusion' : 'color-burn';
 
 		const canvas = createElementNS("canvas");
 		canvas.style.inset = '0';
 		canvas.style.position = 'absolute';
-		canvas.style.mixBlendMode = 'screen';
 		container.append(canvas);
+		canvas.style.mixBlendMode = 'lighten';
+
 		canvases.push(canvas);
 
-		if (i === 0) {
-			domElement.prepend(container);
-		} else {
-			container.style.mixBlendMode = 'darken';
-			domElement.append(container);
-		}
+		const video = createElementNS("video");
+		container.append(video);
 
 		video.muted = true;
 		video.autoplay = true;
@@ -128,6 +122,9 @@ function createDomElement(canvas) {
 		video.style.objectFit = "cover";
 		video.style.width = "100%";
 		video.style.height = "100%";
+		video.style.mixBlendMode = 'screen';
+
+		domElement.append(container);
 	}
 
 	return { domElement, canvases };
