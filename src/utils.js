@@ -102,7 +102,6 @@ function createDomElement(canvas) {
 		canvas.style.inset = '0';
 		canvas.style.position = 'absolute';
 		container.append(canvas);
-		canvas.style.mixBlendMode = 'lighten';
 
 		canvases.push(canvas);
 
