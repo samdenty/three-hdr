@@ -20,7 +20,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/mrdoob/three.js"
+    "url": "https://github.com/samdenty/three.js-hdr"
   },
   "sideEffects": [
     "./src/nodes/**/*"
