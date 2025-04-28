@@ -1,6 +1,6 @@
 {
   "name": "three-hdr",
-  "version": "0.176.5",
+  "version": "0.176.6",
   "description": "Three.js HDR support",
   "type": "module",
   "main": "./build/three.cjs",
@@ -20,7 +20,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/samdenty/three.js-hdr"
+    "url": "https://github.com/samdenty/three-hdr"
   },
   "sideEffects": [
     "./src/nodes/**/*"
