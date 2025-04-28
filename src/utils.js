@@ -92,17 +92,27 @@ function createDomElement(canvas) {
 
 	domElement.appendChild(canvas);
 
-	for (let i = 0; i < 2; i++) {
+	for (let i = 0; i < 3; i++) {
 		const container = createElementNS("div");
 		container.classList.add('three.js-hdr-highlight');
 		container.style.pointerEvents = 'none';
-		container.style.mixBlendMode = i === 0 ? 'exclusion' : 'color-burn';
+		container.style.mixBlendMode = i === 0 ? 'exclusion' : i === 1 ? 'color-burn' : 'multiply';
 
 		const canvas = createElementNS("canvas");
 		canvas.style.inset = '0';
 		canvas.style.position = 'absolute';
-		container.append(canvas);
 
+		if (i === 2) {
+			canvas.style.opacity = 0.3;
+
+			const div = createElementNS('div');
+			div.style.position = 'absolute';
+			div.style.inset = '0';
+			div.style.background = 'white';
+			container.append(div);
+		}
+
+		container.append(canvas);
 		canvases.push(canvas);
 
 		const video = createElementNS("video");
